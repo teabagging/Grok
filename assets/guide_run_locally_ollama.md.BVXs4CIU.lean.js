@@ -1,0 +1,55 @@
+import{_ as s,c as n,b as l,o as e}from"./chunks/framework.B1z0IdBH.js";const m=JSON.parse('{"title":"Ollama","description":"","frontmatter":{},"headers":[{"level":2,"title":"Quickstart","slug":"quickstart","link":"#quickstart","children":[]},{"level":2,"title":"Run Ollama with Your GGUF Files","slug":"run-ollama-with-your-gguf-files","link":"#run-ollama-with-your-gguf-files","children":[]},{"level":2,"title":"Tool Use","slug":"tool-use","link":"#tool-use","children":[]}],"relativePath":"guide/run_locally/ollama.md","filePath":"guide/run_locally/ollama.md"}'),t={name:"guide/run_locally/ollama.md"};function o(p,a,i,c,r,u){return e(),n("div",null,a[0]||(a[0]=[l(`<h1 id="ollama" tabindex="-1">Ollama <a class="header-anchor" href="#ollama" aria-label="Permalink to &quot;Ollama&quot;">​</a></h1><p><a href="https://ollama.com/" target="_blank" rel="noreferrer">Ollama</a> helps you run LLMs locally with only a few commands. It is available at MacOS, Linux, and Windows. Now, Qwen2.5 is officially on Ollama, and you can run it with one command:</p><div class="language-bash"><button title="Copy Code" class="copy"></button><span class="lang">bash</span><pre class="shiki github-dark vp-code" tabindex="0"><code><span class="line"><span style="color:#B392F0;">ollama</span><span style="color:#9ECBFF;"> run</span><span style="color:#9ECBFF;"> qwen2.5</span></span></code></pre></div><p>Next, we introduce more detailed usages of Ollama for running Qwen2.5 models.</p><h2 id="quickstart" tabindex="-1">Quickstart <a class="header-anchor" href="#quickstart" aria-label="Permalink to &quot;Quickstart&quot;">​</a></h2><p>Visit the official website <a href="https://ollama.com/" target="_blank" rel="noreferrer">Ollama</a> and click download to install Ollama on your device. You can also search models on the website, where you can find the Qwen2.5 models. Except for the default one, you can choose to run Qwen2.5-Instruct models of different sizes by:</p><ul><li><code>ollama run qwen2.5:0.5b</code></li><li><code>ollama run qwen2.5:1.5b</code></li><li><code>ollama run qwen2.5:3b</code></li><li><code>ollama run qwen2.5:7b</code></li><li><code>ollama run qwen2.5:14b</code></li><li><code>ollama run qwen2.5:32b</code></li><li><code>ollama run qwen2.5:72b</code></li></ul><p>:::{note} <code>ollama</code> does not host base models. Even though the tag may not have the instruct suffix, they are all instruct models. :::</p><h2 id="run-ollama-with-your-gguf-files" tabindex="-1">Run Ollama with Your GGUF Files <a class="header-anchor" href="#run-ollama-with-your-gguf-files" aria-label="Permalink to &quot;Run Ollama with Your GGUF Files&quot;">​</a></h2><p>Sometimes you don&#39;t want to pull models and you just want to use Ollama with your own GGUF files. Suppose you have a GGUF file of Qwen2.5, <code>qwen2.5-7b-instruct-q5_0.gguf</code>. For the first step, you need to create a file called <code>Modelfile</code>. The content of the file is shown below:</p><div class="language-text"><button title="Copy Code" class="copy"></button><span class="lang">text</span><pre class="shiki github-dark vp-code" tabindex="0"><code><span class="line"><span>FROM qwen2.5-7b-instruct-q5_0.gguf</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span># set the temperature to 1 [higher is more creative, lower is more coherent]</span></span>
+<span class="line"><span>PARAMETER temperature 0.7</span></span>
+<span class="line"><span>PARAMETER top_p 0.8</span></span>
+<span class="line"><span>PARAMETER repeat_penalty 1.05</span></span>
+<span class="line"><span>PARAMETER top_k 20</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>TEMPLATE &quot;&quot;&quot;{{ if .Messages }}</span></span>
+<span class="line"><span>{{- if or .System .Tools }}&lt;|im_start|&gt;system</span></span>
+<span class="line"><span>{{ .System }}</span></span>
+<span class="line"><span>{{- if .Tools }}</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span># Tools</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>You are provided with function signatures within &lt;tools&gt;&lt;/tools&gt; XML tags:</span></span>
+<span class="line"><span>&lt;tools&gt;{{- range .Tools }}</span></span>
+<span class="line"><span>{&quot;type&quot;: &quot;function&quot;, &quot;function&quot;: {{ .Function }}}{{- end }}</span></span>
+<span class="line"><span>&lt;/tools&gt;</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>For each function call, return a json object with function name and arguments within &lt;tool_call&gt;&lt;/tool_call&gt; XML tags:</span></span>
+<span class="line"><span>&lt;tool_call&gt;</span></span>
+<span class="line"><span>{&quot;name&quot;: &lt;function-name&gt;, &quot;arguments&quot;: &lt;args-json-object&gt;}</span></span>
+<span class="line"><span>&lt;/tool_call&gt;</span></span>
+<span class="line"><span>{{- end }}&lt;|im_end|&gt;</span></span>
+<span class="line"><span>{{ end }}</span></span>
+<span class="line"><span>{{- range $i, $_ := .Messages }}</span></span>
+<span class="line"><span>{{- $last := eq (len (slice $.Messages $i)) 1 -}}</span></span>
+<span class="line"><span>{{- if eq .Role &quot;user&quot; }}&lt;|im_start|&gt;user</span></span>
+<span class="line"><span>{{ .Content }}&lt;|im_end|&gt;</span></span>
+<span class="line"><span>{{ else if eq .Role &quot;assistant&quot; }}&lt;|im_start|&gt;assistant</span></span>
+<span class="line"><span>{{ if .Content }}{{ .Content }}</span></span>
+<span class="line"><span>{{- else if .ToolCalls }}&lt;tool_call&gt;</span></span>
+<span class="line"><span>{{ range .ToolCalls }}{&quot;name&quot;: &quot;{{ .Function.Name }}&quot;, &quot;arguments&quot;: {{ .Function.Arguments }}}</span></span>
+<span class="line"><span>{{ end }}&lt;/tool_call&gt;</span></span>
+<span class="line"><span>{{- end }}{{ if not $last }}&lt;|im_end|&gt;</span></span>
+<span class="line"><span>{{ end }}</span></span>
+<span class="line"><span>{{- else if eq .Role &quot;tool&quot; }}&lt;|im_start|&gt;user</span></span>
+<span class="line"><span>&lt;tool_response&gt;</span></span>
+<span class="line"><span>{{ .Content }}</span></span>
+<span class="line"><span>&lt;/tool_response&gt;&lt;|im_end|&gt;</span></span>
+<span class="line"><span>{{ end }}</span></span>
+<span class="line"><span>{{- if and (ne .Role &quot;assistant&quot;) $last }}&lt;|im_start|&gt;assistant</span></span>
+<span class="line"><span>{{ end }}</span></span>
+<span class="line"><span>{{- end }}</span></span>
+<span class="line"><span>{{- else }}</span></span>
+<span class="line"><span>{{- if .System }}&lt;|im_start|&gt;system</span></span>
+<span class="line"><span>{{ .System }}&lt;|im_end|&gt;</span></span>
+<span class="line"><span>{{ end }}{{ if .Prompt }}&lt;|im_start|&gt;user</span></span>
+<span class="line"><span>{{ .Prompt }}&lt;|im_end|&gt;</span></span>
+<span class="line"><span>{{ end }}&lt;|im_start|&gt;assistant</span></span>
+<span class="line"><span>{{ end }}{{ .Response }}{{ if .Response }}&lt;|im_end|&gt;{{ end }}&quot;&quot;&quot;</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span># set the system message</span></span>
+<span class="line"><span>SYSTEM &quot;&quot;&quot;You are Qwen, created by Alibaba Cloud. You are a helpful assistant.&quot;&quot;&quot;</span></span></code></pre></div><p>Then create the ollama model by running:</p><div class="language-bash"><button title="Copy Code" class="copy"></button><span class="lang">bash</span><pre class="shiki github-dark vp-code" tabindex="0"><code><span class="line"><span style="color:#B392F0;">ollama</span><span style="color:#9ECBFF;"> create</span><span style="color:#9ECBFF;"> qwen2.5_7b</span><span style="color:#79B8FF;"> -f</span><span style="color:#9ECBFF;"> Modelfile</span></span></code></pre></div><p>Once it is finished, you can run your ollama model by:</p><div class="language-bash"><button title="Copy Code" class="copy"></button><span class="lang">bash</span><pre class="shiki github-dark vp-code" tabindex="0"><code><span class="line"><span style="color:#B392F0;">ollama</span><span style="color:#9ECBFF;"> run</span><span style="color:#9ECBFF;"> qwen2.5_7b</span></span></code></pre></div><h2 id="tool-use" tabindex="-1">Tool Use <a class="header-anchor" href="#tool-use" aria-label="Permalink to &quot;Tool Use&quot;">​</a></h2><p>Tool use is now support Ollama and you should be able to run Qwen2.5 models with it. For more details, see our <a href="./../framework/function_call.html">function calling guide</a>.</p>`,17)]))}const h=s(t,[["render",o]]);export{m as __pageData,h as default};
